@@ -11,6 +11,7 @@ public class Solver {
     private int nrMoves;
     private final Collection<Board> solutionSequence;
     private MinPQ<Node> priorityQueue = new MinPQ<>(new sortByManhattan());
+    private boolean solvable;
 
     // Find a solution to the initial board (using the A* algorithm)
     public Solver(Board initial)
@@ -21,21 +22,72 @@ public class Solver {
         initialBoard = initial;
         nrMoves = 0;
         solutionSequence = new ArrayList<>();
+
+        priorityQueue.insert(new Node(0, initialBoard, initialBoard.manhattan(), null));
+
+        MinPQ<Node> priorityQueueTwin = new MinPQ<>(new sortByManhattan());
+        priorityQueueTwin.insert(new Node(0, initialBoard.twin(), initialBoard.twin().manhattan(), null));
+
+        Node currentNode;
+        Node currentNodeTwin;
+
+        boolean solved = false;
+        boolean solvedTwin = false;
+
+        while(!solved && !solvedTwin)
+        {
+            currentNode = priorityQueue.min();
+            priorityQueue.delMin();
+            solutionSequence.add(currentNode.board);
+
+            if(currentNode.board.isGoal())
+            {
+                solvable = true;
+                solved = true;
+                break;
+            }
+
+            nrMoves++;
+
+            for(Board board : currentNode.board.neighbors())
+            {
+                if(board.isGoal())
+                {
+                    solutionSequence.add(board);
+                    solvable = true;
+                    solved = true;
+                    nrMoves = currentNode.moves + 1;
+                    break;
+                }
+
+                if(currentNode.prevNode == null || !board.equals(currentNode.prevNode.board)) {
+                    priorityQueue.insert(new Node(currentNode.moves + 1, board, board.manhattan(), currentNode));
+                }
+            }
+
+            currentNodeTwin = priorityQueueTwin.min();
+            priorityQueueTwin.delMin();
+
+            for(Board boardTwin : currentNodeTwin.board.neighbors())
+            {
+                if(boardTwin.isGoal())
+                {
+                    solvable = false;
+                    solvedTwin = true;
+                    break;
+                }
+
+                if(currentNodeTwin.prevNode == null || !boardTwin.equals(currentNodeTwin.prevNode.board)) {
+                    priorityQueueTwin.insert(new Node(currentNodeTwin.moves + 1, boardTwin, boardTwin.manhattan(), currentNodeTwin));
+                }
+            }
+        }
     }
 
     // Is the initial board solvable?
     public boolean isSolvable()
     {
-        int size = initialBoard.dimension();
-
-        if(size % 2 == 0)
-        {
-            return initialBoard.inversions + initialBoard.rowBlank % 2 != 0;
-        }
-        else
-        {
-            return initialBoard.inversions % 2 == 0;
-        }
+        return solvable;
     }
 
     // Minimum number of moves to solve initial board, -1 if unsolvable
@@ -52,35 +104,6 @@ public class Solver {
     {
         if(!isSolvable())
             return null;
-
-        priorityQueue.insert(new Node(0, initialBoard, initialBoard.manhattan(), null));
-
-        Node currentNode;
-
-        boolean solved = false;
-
-        while(!solved)
-        {
-            currentNode = priorityQueue.min();
-            priorityQueue.delMin();
-            solutionSequence.add(currentNode.board);
-
-            nrMoves++;
-
-            for(Board board : currentNode.board.neighbors())
-            {
-                if(board.isGoal())
-                {
-                    solutionSequence.add(board);
-                    solved = true;
-                    break;
-                }
-
-                if(currentNode.prevNode == null || !board.equals(currentNode.prevNode.board)) {
-                    priorityQueue.insert(new Node(currentNode.moves + 1, board, board.manhattan(), currentNode));
-                }
-            }
-        }
 
         return solutionSequence;
     }
@@ -122,14 +145,14 @@ public class Solver {
 
         Solver solve = new Solver(initial);
 
-        ArrayList<Board> sol = (ArrayList<Board>) solve.solution();
+        //ArrayList<Board> sol = (ArrayList<Board>) solve.solution();
 
         if(!solve.isSolvable())
             StdOut.println("No solution possible");
         else
         {
             StdOut.println("Minimum number of moves = " + solve.moves() + "\n");
-            for(Board b : sol)
+            for(Board b : solve.solution())
                 StdOut.println(b);
         }
     }

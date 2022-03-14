@@ -4,8 +4,6 @@ import java.util.Collection;
 public class Board {
     private final int[][] tiles;
     private final int size;
-    public int inversions = inversions();
-    public int rowBlank = rowBlank();
 
     public Board(int[][] tiles)
     {
@@ -172,38 +170,6 @@ public class Board {
         return resultBoard;
     }
 
-    private int inversions()
-    {
-        int ind = 0;
-        int[] array = new int[size * size];
-        int nrInversions = 0;
-
-        for(int i = 0; i < size; ++i)
-            for(int j = 0; j < size; ++j)
-                array[ind++] = tiles[i][j];
-
-        for(int i = 0; i < size * size - 1; ++i)
-            for(int j = i + 1; j < size * size; ++j)
-                if(array[i] != 0 && array[j] != 0 && array[i] > array[j])
-                    nrInversions++;
-
-        return nrInversions;
-    }
-
-    private int rowBlank()
-    {
-        int row = 0;
-
-        for(int i = 0; i < size; ++i)
-            for(int j = 0; j < size; ++j)
-                if (tiles[i][j] == 0) {
-                    row = i;
-                    break;
-                }
-
-        return row;
-    }
-
     public static void main(String[] args)
     {
         int[][] tiles = {
@@ -225,6 +191,5 @@ public class Board {
         System.out.println(b.isGoal());
         System.out.println(b);
         System.out.println(b.twin());
-        System.out.println(b.inversions());
     }
 }
